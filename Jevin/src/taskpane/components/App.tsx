@@ -38,7 +38,7 @@ const App: React.FC<AppProps> = (props: AppProps) => {
 
   return (
     <div className={styles.root}>
-      <Header logo="assets/logo-filled.png" title={props.title} message="Welcome" />
+      <Header logo="assets/logo-filled-3.png" title={props.title} message="Welcome" />
       <HeroList message="Upload your financial data JSON file to create a 3-statement model!" items={listItems} />
       <FinancialModelGenerator />
     </div>
