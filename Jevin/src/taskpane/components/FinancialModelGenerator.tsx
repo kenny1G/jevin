@@ -1,74 +1,12 @@
 import * as React from "react";
 import { Button, MessageBar } from "@fluentui/react-components";
+import { useFinancialData, FinancialData } from "../context/FinancialDataContext";
 
 /* global Excel, console */
 
-interface FinancialData {
-  filingInfo: {
-    fiscalYear: number;
-  };
-  financialStatements: {
-    incomeStatement: {
-      revenue: number;
-      costOfRevenue: number;
-      grossProfit: number;
-      sgAndA: number;
-      rAndD: number;
-      operatingExpenses: number;
-      operatingIncome: number;
-      interestExpense: number;
-      incomeTaxExpense: number;
-      netIncome: number;
-      basicEps: number;
-      dilutedEps: number;
-      depreciationAmortization: number;
-      sharesOutstandingBasic: number;
-      sharesOutstandingDiluted: number;
-    };
-    balanceSheet: {
-      cashAndEquivalents: number;
-      shortTermInvestments: number;
-      accountsReceivable: number;
-      inventory: number;
-      totalCurrentAssets: number;
-      propertyPlantEquipment: number;
-      goodwill: number;
-      intangibleAssets: number;
-      totalAssets: number;
-      accountsPayable: number;
-      shortTermDebt: number;
-      totalCurrentLiabilities: number;
-      longTermDebt: number;
-      totalLiabilities: number;
-      totalEquity: number;
-    };
-    cashFlowStatement: {
-      netIncome: number;
-      depreciationAmortization: number;
-      stockBasedCompensation: number;
-      operatingCashFlow: number;
-      capitalExpenditures: number;
-      acquisitions: number;
-      investingCashFlow: number;
-      debtIssuance: number;
-      debtRepayment: number;
-      stockRepurchase: number;
-      dividendsPaid: number;
-      financingCashFlow: number;
-      freeCashFlow: number;
-    };
-  };
-  companyProfile: {
-    name: string;
-    ticker: string;
-  };
-}
-
 export const FinancialModelGenerator: React.FC = () => {
-  const [status, setStatus] = React.useState<{
-    message: string;
-    type: "error" | "success" | "info" | null;
-  }>({ message: "", type: null });
+  // Use the financial data context
+  const { financialData, setFinancialData, status, setStatus } = useFinancialData();
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -81,6 +19,10 @@ export const FinancialModelGenerator: React.FC = () => {
       try {
         const jsonData: FinancialData = JSON.parse(e.target?.result as string);
         console.log("Parsed JSON data:", jsonData);
+
+        // Store the data in the context so other components can access it
+        setFinancialData(jsonData);
+
         setStatus({ message: "Generating Excel model...", type: "info" });
         await generateFinancialModel(jsonData);
       } catch (error) {
@@ -110,7 +52,7 @@ export const FinancialModelGenerator: React.FC = () => {
         // Try to get existing worksheet
         const sheetName = "3-Statement Model";
         let sheet: Excel.Worksheet;
-        
+
         try {
           sheet = context.workbook.worksheets.getItem(sheetName);
           sheet.delete();
@@ -132,7 +74,7 @@ export const FinancialModelGenerator: React.FC = () => {
         companyNameRange.values = [[`${data.companyProfile.name} (${data.companyProfile.ticker})`, "", "", ""]];
         companyNameRange.format.font.bold = true;
         companyNameRange.format.font.size = 14;
-        
+
         // Add model drivers section
         const driversHeaderRange = sheet.getRange("A3:D3");
         driversHeaderRange.values = [["Model Drivers:", "FY24", "FY25", "FY26"]];
@@ -148,8 +90,8 @@ export const FinancialModelGenerator: React.FC = () => {
 
         const driversItems = [
             ["Revenue Growth:", "", 0.05, 0.05],
-            ["Cost of Revenue (% of Revenue):", (data.financialStatements.incomeStatement.costOfRevenue / data.financialStatements.incomeStatement.revenue), 
-             "=B5", 
+            ["Cost of Revenue (% of Revenue):", (data.financialStatements.incomeStatement.costOfRevenue / data.financialStatements.incomeStatement.revenue),
+             "=B5",
              "=B5"],
             ["Operating Expenses (% of Revenue):", (data.financialStatements.incomeStatement.operatingExpenses / data.financialStatements.incomeStatement.revenue),
              "=B6",
@@ -175,12 +117,12 @@ export const FinancialModelGenerator: React.FC = () => {
 
         const driversRange = sheet.getRange(`A4:D${4 + driversItems.length - 1}`);
         driversRange.values = driversItems;
-        
+
         // Format drivers section
         const driversDataRange = sheet.getRange(`B4:D${4 + driversItems.length - 1}`);
         driversDataRange.format.horizontalAlignment = "Right";
         driversDataRange.numberFormat = [["0.0%"]];  // Format as percentage with array syntax
-        
+
         // Color the FY24 values blue
         const driversFY24Range = sheet.getRange(`B4:B${4 + driversItems.length - 1}`);
         driversFY24Range.format.font.color = "#0066CC";
@@ -201,7 +143,7 @@ export const FinancialModelGenerator: React.FC = () => {
         headerRange.values = headerValues;
         headerRange.format.font.bold = true;
         headerRange.format.font.color = "#0066CC";
-        
+
         // Right align the statement year headers
         const statementYearHeaders = sheet.getRange(`B${currentRow}:D${currentRow}`);
         statementYearHeaders.format.horizontalAlignment = "Right";
@@ -219,30 +161,30 @@ export const FinancialModelGenerator: React.FC = () => {
         const costRatio = costOfRevenue / revenue;
         const opexRatio = operatingExpenses / revenue;
         const taxRate = incomeTaxExpense / (data.financialStatements.incomeStatement.operatingIncome - interestExpense);
-        
+
         // Assume 5% revenue growth for projections
         const growthRate = 0.05;
-        
+
         // Project FY25 and FY26
         const fy25Revenue = revenue * (1 + growthRate);
         const fy26Revenue = fy25Revenue * (1 + growthRate);
-        
+
         const fy25CostOfRevenue = -(fy25Revenue * costRatio);
         const fy26CostOfRevenue = -(fy26Revenue * costRatio);
-        
+
         const fy25OpEx = -(fy25Revenue * opexRatio);
         const fy26OpEx = -(fy26Revenue * opexRatio);
-        
+
         const fy25OpIncome = fy25Revenue + fy25CostOfRevenue + fy25OpEx;
         const fy26OpIncome = fy26Revenue + fy26CostOfRevenue + fy26OpEx;
-        
+
         // Assume interest expense stays constant
         const fy25PreTaxIncome = fy25OpIncome - interestExpense;
         const fy26PreTaxIncome = fy26OpIncome - interestExpense;
-        
+
         const fy25TaxExpense = -(fy25PreTaxIncome * taxRate);
         const fy26TaxExpense = -(fy26PreTaxIncome * taxRate);
-        
+
         const fy25NetIncome = fy25PreTaxIncome + fy25TaxExpense;
         const fy26NetIncome = fy26PreTaxIncome + fy26TaxExpense;
 
@@ -250,29 +192,29 @@ export const FinancialModelGenerator: React.FC = () => {
         const arRatio = data.financialStatements.balanceSheet.accountsReceivable / revenue;
         const inventoryRatio = data.financialStatements.balanceSheet.inventory / revenue;
         const apRatio = data.financialStatements.balanceSheet.accountsPayable / revenue;
-        
+
         // Project balance sheet items
         const fy25AR = fy25Revenue * arRatio;
         const fy26AR = fy26Revenue * arRatio;
-        
+
         const fy25Inventory = fy25Revenue * inventoryRatio;
         const fy26Inventory = fy26Revenue * inventoryRatio;
-        
+
         const fy25AP = fy25Revenue * apRatio;
         const fy26AP = fy26Revenue * apRatio;
 
         // Cash Flow Projections
         const capexRatio = Math.abs(data.financialStatements.cashFlowStatement.capitalExpenditures) / revenue;
-        
+
         const fy25Capex = -(fy25Revenue * capexRatio);
         const fy26Capex = -(fy26Revenue * capexRatio);
-        
+
         const fy25DA = data.financialStatements.incomeStatement.depreciationAmortization * 1.05;  // Assume 5% growth in D&A
         const fy26DA = fy25DA * 1.05;
 
         const fy25OpCF = fy25NetIncome + fy25DA;  // Simplified operating cash flow
         const fy26OpCF = fy26NetIncome + fy26DA;
-        
+
         const fy25FCF = fy25OpCF + fy25Capex;  // Simplified free cash flow
         const fy26FCF = fy26OpCF + fy26Capex;
 
@@ -287,50 +229,50 @@ export const FinancialModelGenerator: React.FC = () => {
 
         // Update array format to use only 4 columns with Excel formulas
         const incomeStatementItems = [
-            ["Revenue:", data.financialStatements.incomeStatement.revenue, 
-             `=B${currentRow}*(1+C4)`, 
+            ["Revenue:", data.financialStatements.incomeStatement.revenue,
+             `=B${currentRow}*(1+C4)`,
              `=C${currentRow}*(1+D4)`],
-            ["Cost of Revenue:", data.financialStatements.incomeStatement.costOfRevenue, 
-             `=-C${currentRow}*C5`, 
+            ["Cost of Revenue:", data.financialStatements.incomeStatement.costOfRevenue,
+             `=-C${currentRow}*C5`,
              `=-D${currentRow}*D5`],
-            ["Gross Profit:", data.financialStatements.incomeStatement.grossProfit, 
-             `=C${currentRow}+C${currentRow + 1}`, 
+            ["Gross Profit:", data.financialStatements.incomeStatement.grossProfit,
+             `=C${currentRow}+C${currentRow + 1}`,
              `=D${currentRow}+D${currentRow + 1}`],
-            ["Operating Expenses:", data.financialStatements.incomeStatement.operatingExpenses, 
-             `=-C${currentRow}*C6`, 
+            ["Operating Expenses:", data.financialStatements.incomeStatement.operatingExpenses,
+             `=-C${currentRow}*C6`,
              `=-D${currentRow}*D6`],
             ["    R&D:", data.financialStatements.incomeStatement.rAndD, "", ""],
             ["    SG&A:", data.financialStatements.incomeStatement.sgAndA, "", ""],
-            ["Operating Income:", data.financialStatements.incomeStatement.operatingIncome, 
-             `=C${currentRow + 2}+C${currentRow + 3}`, 
+            ["Operating Income:", data.financialStatements.incomeStatement.operatingIncome,
+             `=C${currentRow + 2}+C${currentRow + 3}`,
              `=D${currentRow + 2}+D${currentRow + 3}`],
-            ["Interest Expense:", data.financialStatements.incomeStatement.interestExpense, 
-             `=B${currentRow + 7}`, 
+            ["Interest Expense:", data.financialStatements.incomeStatement.interestExpense,
+             `=B${currentRow + 7}`,
              `=B${currentRow + 7}`],
-            ["Income Tax Expense:", data.financialStatements.incomeStatement.incomeTaxExpense, 
-             `=-(C${currentRow + 6}-C${currentRow + 7})*C8`, 
+            ["Income Tax Expense:", data.financialStatements.incomeStatement.incomeTaxExpense,
+             `=-(C${currentRow + 6}-C${currentRow + 7})*C8`,
              `=-(D${currentRow + 6}-D${currentRow + 7})*D8`],
-            ["Net Income:", data.financialStatements.incomeStatement.netIncome, 
-             `=C${currentRow + 6}+C${currentRow + 7}+C${currentRow + 8}`, 
+            ["Net Income:", data.financialStatements.incomeStatement.netIncome,
+             `=C${currentRow + 6}+C${currentRow + 7}+C${currentRow + 8}`,
              `=D${currentRow + 6}+D${currentRow + 7}+D${currentRow + 8}`]
         ];
 
         const incomeStatementRange = sheet.getRange(`A${currentRow}:D${currentRow + incomeStatementItems.length - 1}`);
         incomeStatementRange.values = incomeStatementItems;
-        
+
         // Format numbers and colors
         const dataRange = sheet.getRange(`B${currentRow}:D${currentRow + incomeStatementItems.length - 1}`);
         dataRange.numberFormat = [["#,##0;(#,##0);-"]];  // Fix array syntax
         dataRange.format.horizontalAlignment = "Right";
-        
+
         // Color the FY24 values blue
         const fy24Range = sheet.getRange(`B${currentRow}:B${currentRow + incomeStatementItems.length - 1}`);
         fy24Range.format.font.color = "#0066CC";  // Blue for JSON values
-        
+
         // Set colors for labels
         const labelRange = sheet.getRange(`A${currentRow}:A${currentRow + incomeStatementItems.length - 1}`);
         labelRange.format.font.color = "#000000";  // Black for regular text
-        
+
         // Bold totals
         sheet.getRange(`A${currentRow + 2}`).format.font.bold = true;  // Total Revenue
         sheet.getRange(`A${currentRow + 6}`).format.font.bold = true;  // Operating Income
@@ -354,11 +296,11 @@ export const FinancialModelGenerator: React.FC = () => {
             ["Current Assets:", "", "", ""],
             ["    Cash and Equivalents:", data.financialStatements.balanceSheet.cashAndEquivalents || "", "", ""],
             ["    Short Term Investments:", data.financialStatements.balanceSheet.shortTermInvestments || "", "", ""],
-            ["    Accounts Receivable:", data.financialStatements.balanceSheet.accountsReceivable || "", 
-             `=C${currentRow - incomeStatementItems.length + 1}*C10`, 
+            ["    Accounts Receivable:", data.financialStatements.balanceSheet.accountsReceivable || "",
+             `=C${currentRow - incomeStatementItems.length + 1}*C10`,
              `=D${currentRow - incomeStatementItems.length + 1}*D10`],
-            ["    Inventory:", data.financialStatements.balanceSheet.inventory || "", 
-             `=C${currentRow - incomeStatementItems.length + 1}*C11`, 
+            ["    Inventory:", data.financialStatements.balanceSheet.inventory || "",
+             `=C${currentRow - incomeStatementItems.length + 1}*C11`,
              `=D${currentRow - incomeStatementItems.length + 1}*D11`],
             ["Total Current Assets:", data.financialStatements.balanceSheet.totalCurrentAssets || "", "", ""],
             ["Property, Plant & Equipment:", data.financialStatements.balanceSheet.propertyPlantEquipment || "", "", ""],
@@ -367,8 +309,8 @@ export const FinancialModelGenerator: React.FC = () => {
             ["Total Assets:", data.financialStatements.balanceSheet.totalAssets || "", "", ""],
             ["LIABILITIES & EQUITY:", "", "", ""],
             ["Current Liabilities:", "", "", ""],
-            ["    Accounts Payable:", data.financialStatements.balanceSheet.accountsPayable || "", 
-             `=C${currentRow - incomeStatementItems.length + 1}*C12`, 
+            ["    Accounts Payable:", data.financialStatements.balanceSheet.accountsPayable || "",
+             `=C${currentRow - incomeStatementItems.length + 1}*C12`,
              `=D${currentRow - incomeStatementItems.length + 1}*D12`],
             ["    Short Term Debt:", data.financialStatements.balanceSheet.shortTermDebt || "", "", ""],
             ["Total Current Liabilities:", data.financialStatements.balanceSheet.totalCurrentLiabilities || "", "", ""],
@@ -389,7 +331,7 @@ export const FinancialModelGenerator: React.FC = () => {
         // Set colors for labels and headers
         const balanceSheetLabelRange = sheet.getRange(`A${currentRow}:A${currentRow + balanceSheetItems.length - 1}`);
         balanceSheetLabelRange.format.font.color = "#000000";  // Black for regular text
-        
+
         // Format balance sheet headers and totals
         sheet.getRange(`A${currentRow}`).format.font.color = "#666666";  // ASSETS
         sheet.getRange(`A${currentRow}`).format.font.bold = true;
@@ -419,21 +361,21 @@ export const FinancialModelGenerator: React.FC = () => {
         // Update cash flow items with Excel formulas
         const cashFlowItems = [
             ["Operating Activities:", "", "", ""],
-            ["    Net Income:", data.financialStatements.cashFlowStatement.netIncome || "", 
-             `=C${currentRow - balanceSheetItems.length - incomeStatementItems.length + 10}`, 
+            ["    Net Income:", data.financialStatements.cashFlowStatement.netIncome || "",
+             `=C${currentRow - balanceSheetItems.length - incomeStatementItems.length + 10}`,
              `=D${currentRow - balanceSheetItems.length - incomeStatementItems.length + 10}`],
-            ["    Depreciation & Amortization:", data.financialStatements.cashFlowStatement.depreciationAmortization || "", 
-             `=B${currentRow + 2}*(1+C7)`, 
+            ["    Depreciation & Amortization:", data.financialStatements.cashFlowStatement.depreciationAmortization || "",
+             `=B${currentRow + 2}*(1+C7)`,
              `=C${currentRow + 2}*(1+D7)`],
-            ["Operating Cash Flow:", data.financialStatements.cashFlowStatement.operatingCashFlow || "", 
-             `=C${currentRow + 2}+C${currentRow + 3}`, 
+            ["Operating Cash Flow:", data.financialStatements.cashFlowStatement.operatingCashFlow || "",
+             `=C${currentRow + 2}+C${currentRow + 3}`,
              `=D${currentRow + 2}+D${currentRow + 3}`],
             ["Investing Activities:", "", "", ""],
-            ["    Capital Expenditures:", data.financialStatements.cashFlowStatement.capitalExpenditures ? `(${data.financialStatements.cashFlowStatement.capitalExpenditures})` : "", 
-             `=-C${currentRow - balanceSheetItems.length - incomeStatementItems.length + 1}*C13`, 
+            ["    Capital Expenditures:", data.financialStatements.cashFlowStatement.capitalExpenditures ? `(${data.financialStatements.cashFlowStatement.capitalExpenditures})` : "",
+             `=-C${currentRow - balanceSheetItems.length - incomeStatementItems.length + 1}*C13`,
              `=-D${currentRow - balanceSheetItems.length - incomeStatementItems.length + 1}*D13`],
-            ["Free Cash Flow:", data.financialStatements.cashFlowStatement.freeCashFlow || "", 
-             `=C${currentRow + 4}+C${currentRow + 6}`, 
+            ["Free Cash Flow:", data.financialStatements.cashFlowStatement.freeCashFlow || "",
+             `=C${currentRow + 4}+C${currentRow + 6}`,
              `=D${currentRow + 4}+D${currentRow + 6}`]
         ];
 
@@ -448,7 +390,7 @@ export const FinancialModelGenerator: React.FC = () => {
         // Set colors for labels and headers
         const cashFlowLabelRange = sheet.getRange(`A${currentRow}:A${currentRow + cashFlowItems.length - 1}`);
         cashFlowLabelRange.format.font.color = "#000000";  // Black for regular text
-        
+
         // Format cash flow headers and totals
         sheet.getRange(`A${currentRow}`).format.font.color = "#666666";  // Operating Activities
         sheet.getRange(`A${currentRow}`).format.font.bold = true;
@@ -484,9 +426,29 @@ export const FinancialModelGenerator: React.FC = () => {
     }
   };
 
+  // Use effect to automatically generate model when financial data changes
+  React.useEffect(() => {
+    const generateModelFromContext = async () => {
+      if (financialData) {
+        setStatus({ message: "Generating Excel model from context data...", type: "info" });
+        try {
+          await generateFinancialModel(financialData);
+        } catch (error) {
+          console.error("Error generating model from context:", error);
+          setStatus({
+            message: `Error generating model: ${error instanceof Error ? error.message : "Unknown error"}`,
+            type: "error"
+          });
+        }
+      }
+    };
+
+    generateModelFromContext();
+  }, [financialData]); // Run effect when financialData changes
+
   return (
     <div style={{ padding: "20px" }}>
-      <input
+      {/* <input
         type="file"
         accept=".json"
         onChange={handleFileUpload}
@@ -498,7 +460,7 @@ export const FinancialModelGenerator: React.FC = () => {
         onClick={() => document.getElementById("financial-json-input")?.click()}
       >
         Upload Financial JSON
-      </Button>
+      </Button> */}
       {status.type && (
         <div style={{ marginTop: "20px" }}>
           <MessageBar intent={status.type === "error" ? "error" : status.type === "success" ? "success" : "info"}>
@@ -506,8 +468,13 @@ export const FinancialModelGenerator: React.FC = () => {
           </MessageBar>
         </div>
       )}
+      {financialData && (
+        <div style={{ marginTop: "10px", fontSize: "14px", color: "#666" }}>
+          Using financial data from {financialData.companyProfile?.name || "uploaded file"}
+        </div>
+      )}
     </div>
   );
 };
 
-export default FinancialModelGenerator; 
+export default FinancialModelGenerator;

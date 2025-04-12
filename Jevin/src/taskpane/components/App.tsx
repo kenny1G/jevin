@@ -8,6 +8,7 @@ import { makeStyles } from "@fluentui/react-components";
 import { Ribbon24Regular, LockOpen24Regular, DesignIdeas24Regular } from "@fluentui/react-icons";
 import { insertText } from "../taskpane";
 import CombinedFilingModelGenerator from "./CombinedFilingModelGenerator";
+import { FinancialDataProvider } from "../context/FinancialDataContext";
 
 interface AppProps {
   title: string;
@@ -45,9 +46,11 @@ const App: React.FC<AppProps> = (props: AppProps) => {
         message="Upload your financial data JSON file to create a 3-statement model!"
         items={listItems}
       />
-      {/* <FinancialModelGenerator />
-      <FilingUploader /> */}
-      <CombinedFilingModelGenerator />
+      <FinancialDataProvider>
+        {/* <FilingUploader /> */}
+        <CombinedFilingModelGenerator />
+        <FinancialModelGenerator />
+      </FinancialDataProvider>
     </div>
   );
 };
