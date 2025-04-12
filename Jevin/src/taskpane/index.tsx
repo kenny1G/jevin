@@ -2,6 +2,9 @@ import * as React from "react";
 import { createRoot } from "react-dom/client";
 import App from "./components/App";
 import { FluentProvider, webLightTheme } from "@fluentui/react-components";
+import { ConvexProvider, ConvexReactClient } from "convex/react";
+
+const convex = new ConvexReactClient("https://posh-panda-366.convex.cloud");
 
 /* global document, Office, module, require, HTMLElement */
 
@@ -14,7 +17,9 @@ const root = rootElement ? createRoot(rootElement) : undefined;
 Office.onReady(() => {
   root?.render(
     <FluentProvider theme={webLightTheme}>
-      <App title={title} />
+      <ConvexProvider client={convex}>
+        <App title={title} />
+      </ConvexProvider>
     </FluentProvider>
   );
 });

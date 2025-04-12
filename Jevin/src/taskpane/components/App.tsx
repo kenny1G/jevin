@@ -3,9 +3,12 @@ import Header from "./Header";
 import HeroList, { HeroListItem } from "./HeroList";
 import TextInsertion from "./TextInsertion";
 import FinancialModelGenerator from "./FinancialModelGenerator";
+import FilingUploader from "./FilingUploader";
 import { makeStyles } from "@fluentui/react-components";
 import { Ribbon24Regular, LockOpen24Regular, DesignIdeas24Regular } from "@fluentui/react-icons";
 import { insertText } from "../taskpane";
+import CombinedFilingModelGenerator from "./CombinedFilingModelGenerator";
+import { FinancialDataProvider } from "../context/FinancialDataContext";
 
 interface AppProps {
   title: string;
@@ -40,7 +43,11 @@ const App: React.FC<AppProps> = (props: AppProps) => {
     <div className={styles.root}>
       <Header logo="assets/logo-filled-3.png" title={props.title} message="Welcome" />
       <HeroList message="Upload your financial data JSON file to create a 3-statement model!" items={listItems} />
-      <FinancialModelGenerator />
+      <FinancialDataProvider>
+        {/* <FilingUploader /> */}
+        <CombinedFilingModelGenerator />
+        <FinancialModelGenerator />
+      </FinancialDataProvider>
     </div>
   );
 };
