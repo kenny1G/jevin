@@ -19,7 +19,11 @@ interface FinancialData {
       interestExpense: number;
       incomeTaxExpense: number;
       netIncome: number;
+      basicEps: number;
+      dilutedEps: number;
       depreciationAmortization: number;
+      sharesOutstandingBasic: number;
+      sharesOutstandingDiluted: number;
     };
     balanceSheet: {
       cashAndEquivalents: number;
@@ -119,18 +123,90 @@ export const FinancialModelGenerator: React.FC = () => {
         sheet = context.workbook.worksheets.add(sheetName);
         sheet.activate();
 
-        // Format headers - Only show current year and 2 forecast years
-        const headerRange = sheet.getRange("A1:D1");  // Changed to 4 columns: Label, FY24, FY25, FY26
+        // Set column widths to prevent text cutoff
+        sheet.getRange("A:A").format.columnWidth = 250;  // Wider first column for labels
+        sheet.getRange("B:D").format.columnWidth = 100;  // Wider data columns
+
+        // Add company information
+        const companyNameRange = sheet.getRange("A1:D1");
+        companyNameRange.values = [[`${data.companyProfile.name} (${data.companyProfile.ticker})`, "", "", ""]];
+        companyNameRange.format.font.bold = true;
+        companyNameRange.format.font.size = 14;
+        
+        // Add model drivers section
+        const driversHeaderRange = sheet.getRange("A3:D3");
+        driversHeaderRange.values = [["Model Drivers:", "FY24", "FY25", "FY26"]];
+        driversHeaderRange.format.font.bold = true;
+        driversHeaderRange.format.font.color = "#666666";
+        driversHeaderRange.format.borders.getItem('EdgeBottom').style = 'Continuous';
+        driversHeaderRange.format.borders.getItem('EdgeBottom').color = "#666666";
+
+        // Format year headers in drivers section
+        const driversYearHeaders = sheet.getRange("B3:D3");
+        driversYearHeaders.format.font.color = "#0066CC";
+        driversYearHeaders.format.horizontalAlignment = "Right";
+
+        const driversItems = [
+            ["Revenue Growth:", "", 0.05, 0.05],
+            ["Cost of Revenue (% of Revenue):", (data.financialStatements.incomeStatement.costOfRevenue / data.financialStatements.incomeStatement.revenue), 
+             "=B5", 
+             "=B5"],
+            ["Operating Expenses (% of Revenue):", (data.financialStatements.incomeStatement.operatingExpenses / data.financialStatements.incomeStatement.revenue),
+             "=B6",
+             "=B6"],
+            ["D&A Growth:", "", 0.05, 0.05],
+            ["Tax Rate:", (data.financialStatements.incomeStatement.incomeTaxExpense / (data.financialStatements.incomeStatement.operatingIncome - data.financialStatements.incomeStatement.interestExpense)),
+             "=B8",
+             "=B8"],
+            ["Working Capital Assumptions:", "", "", ""],
+            ["    AR (% of Revenue):", (data.financialStatements.balanceSheet.accountsReceivable / data.financialStatements.incomeStatement.revenue),
+             "=B10",
+             "=B10"],
+            ["    Inventory (% of Revenue):", (data.financialStatements.balanceSheet.inventory / data.financialStatements.incomeStatement.revenue),
+             "=B11",
+             "=B11"],
+            ["    AP (% of Revenue):", (data.financialStatements.balanceSheet.accountsPayable / data.financialStatements.incomeStatement.revenue),
+             "=B12",
+             "=B12"],
+            ["Capex (% of Revenue):", Math.abs(data.financialStatements.cashFlowStatement.capitalExpenditures) / data.financialStatements.incomeStatement.revenue,
+             "=B13",
+             "=B13"]
+        ];
+
+        const driversRange = sheet.getRange(`A4:D${4 + driversItems.length - 1}`);
+        driversRange.values = driversItems;
+        
+        // Format drivers section
+        const driversDataRange = sheet.getRange(`B4:D${4 + driversItems.length - 1}`);
+        driversDataRange.format.horizontalAlignment = "Right";
+        driversDataRange.numberFormat = [["0.0%"]];  // Format as percentage with array syntax
+        
+        // Color the FY24 values blue
+        const driversFY24Range = sheet.getRange(`B4:B${4 + driversItems.length - 1}`);
+        driversFY24Range.format.font.color = "#0066CC";
+
+        // Color the assumptions (FY25 and FY26) green
+        const assumptionsRange = sheet.getRange(`C4:D${4 + driversItems.length - 1}`);
+        assumptionsRange.format.font.color = "#008000";  // Green color for assumptions
+
+        // Bold the section headers in drivers
+        sheet.getRange("A9").format.font.bold = true;  // Working Capital Assumptions
+
+        // Add spacing before financial statements
+        let currentRow = 4 + driversItems.length + 2;
+
+        // Format headers for financial statements
+        const headerRange = sheet.getRange(`A${currentRow}:D${currentRow}`);
         const headerValues = [["", "FY24", "FY25", "FY26"]];
         headerRange.values = headerValues;
         headerRange.format.font.bold = true;
-        headerRange.format.font.color = "#0066CC";  // Blue headers
+        headerRange.format.font.color = "#0066CC";
+        
+        // Right align the statement year headers
+        const statementYearHeaders = sheet.getRange(`B${currentRow}:D${currentRow}`);
+        statementYearHeaders.format.horizontalAlignment = "Right";
 
-        // Set column widths
-        sheet.getRange("A:A").format.columnWidth = 150;
-        sheet.getRange("B:D").format.columnWidth = 85;  // Changed to only 3 data columns
-
-        let currentRow = 2;
+        currentRow += 2;
 
         // Calculate growth rates and ratios from FY24 data
         const revenue = data.financialStatements.incomeStatement.revenue;
@@ -201,7 +277,7 @@ export const FinancialModelGenerator: React.FC = () => {
         const fy26FCF = fy26OpCF + fy26Capex;
 
         // Income Statement Header with separator
-        const headerRangeIS = sheet.getRange(`A${currentRow}:D${currentRow}`);  // Changed to 4 columns
+        const headerRangeIS = sheet.getRange(`A${currentRow}:D${currentRow}`);
         headerRangeIS.values = [["Income Statement:", "", "", ""]];
         headerRangeIS.format.font.bold = true;
         headerRangeIS.format.font.color = "#666666";
@@ -209,23 +285,34 @@ export const FinancialModelGenerator: React.FC = () => {
         headerRangeIS.format.borders.getItem('EdgeBottom').color = "#666666";
         currentRow++;
 
-        // Update array format to use only 4 columns
+        // Update array format to use only 4 columns with Excel formulas
         const incomeStatementItems = [
-            ["Products:", data.financialStatements.incomeStatement.revenue || "", fy25Revenue, fy26Revenue],
-            ["Services:", "", "", ""],
-            ["Total Revenue:", revenue, fy25Revenue, fy26Revenue],
-            ["Cost of Products:", costOfRevenue ? `(${costOfRevenue})` : "", fy25CostOfRevenue, fy26CostOfRevenue],
-            ["Cost of Services:", "", "", ""],
-            ["Operating Expenses:", operatingExpenses ? `(${operatingExpenses})` : "", fy25OpEx, fy26OpEx],
-            ["Operating Income:", data.financialStatements.incomeStatement.operatingIncome || "", fy25OpIncome, fy26OpIncome],
-            ["Other Income / (Expense):", "", "", ""],
-            ["Non-Service Pension Expense:", "", "", ""],
-            ["Interest Income / (Expense):", interestExpense ? `(${interestExpense})` : "", interestExpense, interestExpense],
-            ["Pre-Tax Income:", "", fy25PreTaxIncome, fy26PreTaxIncome],
-            ["Income Taxes:", incomeTaxExpense ? `(${incomeTaxExpense})` : "", fy25TaxExpense, fy26TaxExpense],
-            ["Net Income:", data.financialStatements.incomeStatement.netIncome || "", fy25NetIncome, fy26NetIncome],
-            ["(-) NCI Net Income:", "", "", ""],
-            ["Net Income to Parent:", data.financialStatements.incomeStatement.netIncome || "", fy25NetIncome, fy26NetIncome]
+            ["Revenue:", data.financialStatements.incomeStatement.revenue, 
+             `=B${currentRow}*(1+C4)`, 
+             `=C${currentRow}*(1+D4)`],
+            ["Cost of Revenue:", data.financialStatements.incomeStatement.costOfRevenue, 
+             `=-C${currentRow}*C5`, 
+             `=-D${currentRow}*D5`],
+            ["Gross Profit:", data.financialStatements.incomeStatement.grossProfit, 
+             `=C${currentRow}+C${currentRow + 1}`, 
+             `=D${currentRow}+D${currentRow + 1}`],
+            ["Operating Expenses:", data.financialStatements.incomeStatement.operatingExpenses, 
+             `=-C${currentRow}*C6`, 
+             `=-D${currentRow}*D6`],
+            ["    R&D:", data.financialStatements.incomeStatement.rAndD, "", ""],
+            ["    SG&A:", data.financialStatements.incomeStatement.sgAndA, "", ""],
+            ["Operating Income:", data.financialStatements.incomeStatement.operatingIncome, 
+             `=C${currentRow + 2}+C${currentRow + 3}`, 
+             `=D${currentRow + 2}+D${currentRow + 3}`],
+            ["Interest Expense:", data.financialStatements.incomeStatement.interestExpense, 
+             `=B${currentRow + 7}`, 
+             `=B${currentRow + 7}`],
+            ["Income Tax Expense:", data.financialStatements.incomeStatement.incomeTaxExpense, 
+             `=-(C${currentRow + 6}-C${currentRow + 7})*C8`, 
+             `=-(D${currentRow + 6}-D${currentRow + 7})*D8`],
+            ["Net Income:", data.financialStatements.incomeStatement.netIncome, 
+             `=C${currentRow + 6}+C${currentRow + 7}+C${currentRow + 8}`, 
+             `=D${currentRow + 6}+D${currentRow + 7}+D${currentRow + 8}`]
         ];
 
         const incomeStatementRange = sheet.getRange(`A${currentRow}:D${currentRow + incomeStatementItems.length - 1}`);
@@ -233,7 +320,7 @@ export const FinancialModelGenerator: React.FC = () => {
         
         // Format numbers and colors
         const dataRange = sheet.getRange(`B${currentRow}:D${currentRow + incomeStatementItems.length - 1}`);
-        dataRange.numberFormat = [["#,##0;(#,##0);-"]];
+        dataRange.numberFormat = [["#,##0;(#,##0);-"]];  // Fix array syntax
         dataRange.format.horizontalAlignment = "Right";
         
         // Color the FY24 values blue
@@ -261,29 +348,34 @@ export const FinancialModelGenerator: React.FC = () => {
         balanceSheetHeaderRange.format.borders.getItem('EdgeBottom').color = "#666666";
         currentRow++;
 
-        // Update balance sheet items to use 4 columns
+        // Update balance sheet items with Excel formulas
         const balanceSheetItems = [
             ["ASSETS:", "", "", ""],
-            ["    Cash:", data.financialStatements.balanceSheet.cashAndEquivalents || "", "", ""],
-            ["    Accounts Receivable:", data.financialStatements.balanceSheet.accountsReceivable || "", fy25AR, fy26AR],
-            ["    Inventory & Other:", data.financialStatements.balanceSheet.inventory || "", fy25Inventory, fy26Inventory],
-            ["    Net PP&E, Goodwill & Intangibles:", (data.financialStatements.balanceSheet.propertyPlantEquipment || 0) + (data.financialStatements.balanceSheet.goodwill || 0) + (data.financialStatements.balanceSheet.intangibleAssets || 0), "", ""],
-            ["    Op. Lease Assets:", "", "", ""],
-            ["    Other Assets:", "", "", ""],
+            ["Current Assets:", "", "", ""],
+            ["    Cash and Equivalents:", data.financialStatements.balanceSheet.cashAndEquivalents || "", "", ""],
+            ["    Short Term Investments:", data.financialStatements.balanceSheet.shortTermInvestments || "", "", ""],
+            ["    Accounts Receivable:", data.financialStatements.balanceSheet.accountsReceivable || "", 
+             `=C${currentRow - incomeStatementItems.length + 1}*C10`, 
+             `=D${currentRow - incomeStatementItems.length + 1}*D10`],
+            ["    Inventory:", data.financialStatements.balanceSheet.inventory || "", 
+             `=C${currentRow - incomeStatementItems.length + 1}*C11`, 
+             `=D${currentRow - incomeStatementItems.length + 1}*D11`],
+            ["Total Current Assets:", data.financialStatements.balanceSheet.totalCurrentAssets || "", "", ""],
+            ["Property, Plant & Equipment:", data.financialStatements.balanceSheet.propertyPlantEquipment || "", "", ""],
+            ["Goodwill:", data.financialStatements.balanceSheet.goodwill || "", "", ""],
+            ["Intangible Assets:", data.financialStatements.balanceSheet.intangibleAssets || "", "", ""],
             ["Total Assets:", data.financialStatements.balanceSheet.totalAssets || "", "", ""],
             ["LIABILITIES & EQUITY:", "", "", ""],
-            ["    Accounts Payable:", data.financialStatements.balanceSheet.accountsPayable || "", fy25AP, fy26AP],
-            ["    Accrued Liabilities:", "", "", ""],
-            ["    Contract Liabilities:", "", "", ""],
-            ["    Total Debt:", "", "", ""],
-            ["    Op. Lease Liabilities:", "", "", ""],
-            ["    Other Liabilities:", "", "", ""],
-            ["Total Liabilities:", "", "", ""],
-            ["Common Shareholders' Equity:", "", "", ""],
-            ["Noncontrolling Interests:", "", "", ""],
-            ["Total Equity:", "", "", ""],
-            ["TOTAL LIABILITIES + EQUITY:", "", "", ""],
-            ["Balance Check:", "", "", ""]
+            ["Current Liabilities:", "", "", ""],
+            ["    Accounts Payable:", data.financialStatements.balanceSheet.accountsPayable || "", 
+             `=C${currentRow - incomeStatementItems.length + 1}*C12`, 
+             `=D${currentRow - incomeStatementItems.length + 1}*D12`],
+            ["    Short Term Debt:", data.financialStatements.balanceSheet.shortTermDebt || "", "", ""],
+            ["Total Current Liabilities:", data.financialStatements.balanceSheet.totalCurrentLiabilities || "", "", ""],
+            ["Long Term Debt:", data.financialStatements.balanceSheet.longTermDebt || "", "", ""],
+            ["Total Liabilities:", data.financialStatements.balanceSheet.totalLiabilities || "", "", ""],
+            ["Total Equity:", data.financialStatements.balanceSheet.totalEquity || "", "", ""],
+            ["TOTAL LIABILITIES + EQUITY:", data.financialStatements.balanceSheet.totalAssets || "", "", ""]
         ];
 
         const balanceSheetRange = sheet.getRange(`A${currentRow}:D${currentRow + balanceSheetItems.length - 1}`);
@@ -324,24 +416,25 @@ export const FinancialModelGenerator: React.FC = () => {
         cashFlowHeaderRange.format.borders.getItem('EdgeBottom').color = "#666666";
         currentRow++;
 
-        // Update cash flow items to use 4 columns
+        // Update cash flow items with Excel formulas
         const cashFlowItems = [
             ["Operating Activities:", "", "", ""],
-            ["    Net Income:", data.financialStatements.cashFlowStatement.netIncome || "", fy25NetIncome, fy26NetIncome],
-            ["    Depreciation & Amortization:", data.financialStatements.cashFlowStatement.depreciationAmortization || "", fy25DA, fy26DA],
-            ["    Stock Based Compensation:", "", "", ""],
-            ["Operating Cash Flow:", "", "", ""],
+            ["    Net Income:", data.financialStatements.cashFlowStatement.netIncome || "", 
+             `=C${currentRow - balanceSheetItems.length - incomeStatementItems.length + 10}`, 
+             `=D${currentRow - balanceSheetItems.length - incomeStatementItems.length + 10}`],
+            ["    Depreciation & Amortization:", data.financialStatements.cashFlowStatement.depreciationAmortization || "", 
+             `=B${currentRow + 2}*(1+C7)`, 
+             `=C${currentRow + 2}*(1+D7)`],
+            ["Operating Cash Flow:", data.financialStatements.cashFlowStatement.operatingCashFlow || "", 
+             `=C${currentRow + 2}+C${currentRow + 3}`, 
+             `=D${currentRow + 2}+D${currentRow + 3}`],
             ["Investing Activities:", "", "", ""],
-            ["    Capital Expenditures:", "", "", ""],
-            ["    Acquisitions:", "", "", ""],
-            ["Investing Cash Flow:", "", "", ""],
-            ["Financing Activities:", "", "", ""],
-            ["    Debt Issuance:", "", "", ""],
-            ["    Debt Repayment:", "", "", ""],
-            ["    Share Repurchases:", "", "", ""],
-            ["    Dividends:", "", "", ""],
-            ["Financing Cash Flow:", "", "", ""],
-            ["Free Cash Flow:", "", "", ""]
+            ["    Capital Expenditures:", data.financialStatements.cashFlowStatement.capitalExpenditures ? `(${data.financialStatements.cashFlowStatement.capitalExpenditures})` : "", 
+             `=-C${currentRow - balanceSheetItems.length - incomeStatementItems.length + 1}*C13`, 
+             `=-D${currentRow - balanceSheetItems.length - incomeStatementItems.length + 1}*D13`],
+            ["Free Cash Flow:", data.financialStatements.cashFlowStatement.freeCashFlow || "", 
+             `=C${currentRow + 4}+C${currentRow + 6}`, 
+             `=D${currentRow + 4}+D${currentRow + 6}`]
         ];
 
         const cashFlowRange = sheet.getRange(`A${currentRow}:D${currentRow + cashFlowItems.length - 1}`);
