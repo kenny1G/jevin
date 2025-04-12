@@ -2,6 +2,9 @@ import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { v } from "convex/values";
 import { api } from "./_generated/api";
+import { createDocument } from "./models/document";
+import { uploadFileToLlamaIndex } from "./services/llamaIndex";
+import { createDocumentExtract } from "./models/documentExtract";
 
 const http = httpRouter();
 
@@ -54,34 +57,68 @@ http.route({
       }
       console.log("✅ API key found (length: " + apiKey.length + ")");
 
-      // Create a new FormData to send to LlamaIndex
-      console.log("🔄 Creating FormData for LlamaIndex...");
-      const llamaFormData = new FormData();
-      llamaFormData.append("upload_file", file, file.name);
-      console.log("✅ FormData created with file:", file.name);
+      // Upload the file to LlamaIndex using our service
+      console.log("🌐 Uploading file to LlamaIndex...");
+      const llamaIndexResponse = await uploadFileToLlamaIndex(file, apiKey);
+      console.log("✅ File uploaded to LlamaIndex:", llamaIndexResponse.id);
 
-      // Forward the request to LlamaIndex
-      console.log("🌐 Sending request to LlamaIndex...");
-      const response = await fetch("https://api.cloud.llamaindex.ai/api/v1/files", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${apiKey}`,
-        },
-        body: llamaFormData,
+      // Store the document in our database using our model
+      console.log("💾 Storing document in database...");
+      const documentId = await ctx.runMutation(api["models/document"].createDocument, {
+        name: file.name,
+        llamaIndexResponse,
       });
+      console.log("✅ Document stored in database with ID:", documentId);
 
-      console.log("📥 LlamaIndex response status:", response.status);
-      console.log("📥 LlamaIndex response headers:", JSON.stringify(headersToObject(response.headers)));
+      // Extract JSON from the document
+      console.log("🔍 Extracting JSON from document...");
+      const extractionAgentId = "b50ed79e-390f-4553-8604-08ba2e5bb22b";
+      const fileId = llamaIndexResponse.id;
 
-      // Get the response from LlamaIndex
-      console.log("📄 Parsing LlamaIndex response...");
-      const responseData = await response.json();
-      console.log("✅ LlamaIndex response data:", JSON.stringify(responseData, null, 2));
+      // Make the extraction request to LlamaIndex API
+      const extractionResponse = await fetch(
+        "https://api.cloud.llamaindex.ai/api/v1/extraction/jobs",
+        {
+          method: "POST",
+          headers: {
+            "accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            extraction_agent_id: extractionAgentId,
+            file_id: fileId,
+          }),
+        }
+      );
+
+      if (!extractionResponse.ok) {
+        const errorText = await extractionResponse.text();
+        console.error("❌ Extraction request failed:", errorText);
+        throw new Error(`Extraction request failed: ${extractionResponse.status} ${extractionResponse.statusText}`);
+      }
+
+      const extractionResult = await extractionResponse.json();
+      console.log("✅ Extraction job created:", extractionResult);
+
+      // Store the extraction result in our database
+      console.log("💾 Storing extraction result in database...");
+      const extractId = await ctx.runMutation(api["models/documentExtract"].createDocumentExtract, {
+        documentId,
+        extractionJobId: extractionResult.id,
+      });
+      console.log("✅ Extraction result stored with ID:", extractId);
 
       // Return the response with CORS headers
       console.log("📤 Sending response back to client...");
-      return new Response(JSON.stringify(responseData), {
-        status: response.status,
+      return new Response(JSON.stringify({
+        success: true,
+        documentId,
+        llamaIndexId: llamaIndexResponse.id,
+        extractionId: extractionResult.id,
+        extractId,
+      }), {
+        status: 200,
         headers: {
           "Content-Type": "application/json",
           "Access-Control-Allow-Origin": "*", // Adjust this for production
@@ -90,9 +127,12 @@ http.route({
         },
       });
     } catch (error) {
-      console.error("❌ Error uploading file:", error);
+      console.error("❌ Error processing file:", error);
       console.error("❌ Error stack:", error instanceof Error ? error.stack : "No stack trace");
-      return new Response(JSON.stringify({ error: "Failed to upload file" }), {
+      return new Response(JSON.stringify({
+        error: "Failed to process file",
+        message: error instanceof Error ? error.message : "Unknown error"
+      }), {
         status: 500,
         headers: { "Content-Type": "application/json" },
       });
@@ -119,24 +159,5 @@ http.route({
     });
   }),
 });
-
-
-export const helloWorld = httpAction(async () => {
-  return new Response("Hello, World!", {
-    status: 200,
-    headers: {
-      "Content-Type": "text/plain",
-    },
-  });
-});
-
-
-
-http.route({
-  path: "/hello",
-  method: "GET",
-  handler: helloWorld,
-});
-
 
 export default http;
