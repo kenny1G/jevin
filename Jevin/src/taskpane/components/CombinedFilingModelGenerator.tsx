@@ -58,72 +58,70 @@ const CombinedFilingModelGenerator: React.FC = () => {
     }
   };
 
-  const checkExtractionStatus = React.useCallback(
-    async (jobId: string) => {
-      try {
-        // Get the Convex site URL
-        const convexSiteUrl = "https://posh-panda-366.convex.site";
+  // Function to check extraction status
+  const checkExtractionStatus = async (jobId: string) => {
+    try {
+      // Get the Convex site URL
+      const convexSiteUrl = "https://posh-panda-366.convex.site";
 
-        // Fetch extraction result
-        const response = await fetch(`${convexSiteUrl}/fetch-extraction-result?jobId=${jobId}`);
-        const result = await response.json();
+      // Fetch extraction result
+      const response = await fetch(`${convexSiteUrl}/fetch-extraction-result?jobId=${jobId}`);
+      const result = await response.json();
 
-        if (response.ok && result.extractionResult) {
-          const runs = result.extractionResult.runs;
+      if (response.ok && result.extractionResult) {
+        const runs = result.extractionResult.runs;
 
-          if (runs && runs.length > 0) {
-            const latestRun = runs[0];
+        if (runs && runs.length > 0) {
+          const latestRun = runs[0];
 
-            if (latestRun.status === "completed") {
-              // Clear the polling interval
-              if (pollingInterval) {
-                clearInterval(pollingInterval);
-                setPollingInterval(null);
-              }
+          if (latestRun.status === "completed") {
+            // Clear the polling interval
+            if (pollingInterval) {
+              clearInterval(pollingInterval);
+              setPollingInterval(null);
+            }
 
+            setStatus({
+              message: "Extraction completed. Generating financial model...",
+              type: "info",
+            });
+
+            // Process the extraction result
+            if (latestRun.output && latestRun.output.data) {
+              // Set the financial data in the context
+              setFinancialData(latestRun.output.data as FinancialData);
+              // await generateFinancialModel(latestRun.output.data as FinancialData);
+            } else {
               setStatus({
-                message: "Extraction completed. Generating financial model...",
-                type: "info",
-              });
-
-              // Process the extraction result
-              if (latestRun.output && latestRun.output.data) {
-                // Set the financial data in the context
-                setFinancialData(latestRun.output.data as FinancialData);
-                // await generateFinancialModel(latestRun.output.data as FinancialData);
-              } else {
-                setStatus({
-                  message: "Extraction completed but no data was found.",
-                  type: "error",
-                });
-              }
-            } else if (latestRun.status === "failed") {
-              // Clear the polling interval
-              if (pollingInterval) {
-                clearInterval(pollingInterval);
-                setPollingInterval(null);
-              }
-
-              setStatus({
-                message: `Extraction failed: ${latestRun.error || "Unknown error"}`,
+                message: "Extraction completed but no data was found.",
                 type: "error",
               });
-            } else {
-              // Still in progress
-              setStatus({ message: `Extraction in progress: ${latestRun.status}`, type: "info" });
             }
+          } else if (latestRun.status === "failed") {
+            // Clear the polling interval
+            if (pollingInterval) {
+              clearInterval(pollingInterval);
+              setPollingInterval(null);
+            }
+
+            setStatus({
+              message: `Extraction failed: ${latestRun.error || "Unknown error"}`,
+              type: "error",
+            });
+          } else {
+            // Still in progress
+            setStatus({ message: `Extraction in progress: ${latestRun.status}`, type: "info" });
           }
         }
-      } catch (error) {
-        console.error("Error checking extraction status:", error);
-        setStatus({
-          message: `Error checking extraction status: ${error instanceof Error ? error.message : "Unknown error"}`,
-          type: "error",
-        });
       }
-    },
-    [pollingInterval]
-  );
+    } catch (error) {
+      console.error("Error checking extraction status:", error);
+      setStatus({
+        message: `Error checking extraction status: ${error instanceof Error ? error.message : "Unknown error"}`,
+        type: "error",
+      });
+    }
+  };
 
   // Cleanup polling interval on component unmount
   React.useEffect(() => {

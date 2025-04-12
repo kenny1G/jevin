@@ -262,7 +262,7 @@ export const FinancialModelGenerator: React.FC = () => {
 
         // Format numbers and colors
         const dataRange = sheet.getRange(`B${currentRow}:D${currentRow + incomeStatementItems.length - 1}`);
-        dataRange.numberFormat = [["#,##0;(#,##0);-"]];  // Fix array syntax
+        dataRange.numberFormat = [["#,##0_);(#,##0)"]];  // Use Excel's built-in parentheses format
         dataRange.format.horizontalAlignment = "Right";
 
         // Color the FY24 values blue
@@ -294,30 +294,30 @@ export const FinancialModelGenerator: React.FC = () => {
         const balanceSheetItems = [
             ["ASSETS:", "", "", ""],
             ["Current Assets:", "", "", ""],
-            ["    Cash and Equivalents:", data.financialStatements.balanceSheet.cashAndEquivalents || "", "", ""],
-            ["    Short Term Investments:", data.financialStatements.balanceSheet.shortTermInvestments || "", "", ""],
-            ["    Accounts Receivable:", data.financialStatements.balanceSheet.accountsReceivable || "",
+            ["    Cash and Equivalents:", data.financialStatements.balanceSheet.cashAndEquivalents, "", ""],
+            ["    Short Term Investments:", data.financialStatements.balanceSheet.shortTermInvestments, "", ""],
+            ["    Accounts Receivable:", data.financialStatements.balanceSheet.accountsReceivable,
              `=C${currentRow - incomeStatementItems.length + 1}*C10`,
              `=D${currentRow - incomeStatementItems.length + 1}*D10`],
-            ["    Inventory:", data.financialStatements.balanceSheet.inventory || "",
+            ["    Inventory:", data.financialStatements.balanceSheet.inventory,
              `=C${currentRow - incomeStatementItems.length + 1}*C11`,
              `=D${currentRow - incomeStatementItems.length + 1}*D11`],
-            ["Total Current Assets:", data.financialStatements.balanceSheet.totalCurrentAssets || "", "", ""],
-            ["Property, Plant & Equipment:", data.financialStatements.balanceSheet.propertyPlantEquipment || "", "", ""],
-            ["Goodwill:", data.financialStatements.balanceSheet.goodwill || "", "", ""],
-            ["Intangible Assets:", data.financialStatements.balanceSheet.intangibleAssets || "", "", ""],
-            ["Total Assets:", data.financialStatements.balanceSheet.totalAssets || "", "", ""],
+            ["Total Current Assets:", data.financialStatements.balanceSheet.totalCurrentAssets, "", ""],
+            ["Property, Plant & Equipment:", data.financialStatements.balanceSheet.propertyPlantEquipment, "", ""],
+            ["Goodwill:", data.financialStatements.balanceSheet.goodwill, "", ""],
+            ["Intangible Assets:", data.financialStatements.balanceSheet.intangibleAssets, "", ""],
+            ["Total Assets:", data.financialStatements.balanceSheet.totalAssets, "", ""],
             ["LIABILITIES & EQUITY:", "", "", ""],
             ["Current Liabilities:", "", "", ""],
-            ["    Accounts Payable:", data.financialStatements.balanceSheet.accountsPayable || "",
+            ["    Accounts Payable:", data.financialStatements.balanceSheet.accountsPayable,
              `=C${currentRow - incomeStatementItems.length + 1}*C12`,
              `=D${currentRow - incomeStatementItems.length + 1}*D12`],
-            ["    Short Term Debt:", data.financialStatements.balanceSheet.shortTermDebt || "", "", ""],
-            ["Total Current Liabilities:", data.financialStatements.balanceSheet.totalCurrentLiabilities || "", "", ""],
-            ["Long Term Debt:", data.financialStatements.balanceSheet.longTermDebt || "", "", ""],
-            ["Total Liabilities:", data.financialStatements.balanceSheet.totalLiabilities || "", "", ""],
-            ["Total Equity:", data.financialStatements.balanceSheet.totalEquity || "", "", ""],
-            ["TOTAL LIABILITIES + EQUITY:", data.financialStatements.balanceSheet.totalAssets || "", "", ""]
+            ["    Short Term Debt:", data.financialStatements.balanceSheet.shortTermDebt, "", ""],
+            ["Total Current Liabilities:", data.financialStatements.balanceSheet.totalCurrentLiabilities, "", ""],
+            ["Long Term Debt:", data.financialStatements.balanceSheet.longTermDebt, "", ""],
+            ["Total Liabilities:", data.financialStatements.balanceSheet.totalLiabilities, "", ""],
+            ["Total Equity:", data.financialStatements.balanceSheet.totalEquity, "", ""],
+            ["TOTAL LIABILITIES + EQUITY:", data.financialStatements.balanceSheet.totalAssets, "", ""]
         ];
 
         const balanceSheetRange = sheet.getRange(`A${currentRow}:D${currentRow + balanceSheetItems.length - 1}`);
@@ -325,7 +325,7 @@ export const FinancialModelGenerator: React.FC = () => {
 
         // Format numbers and colors
         const balanceSheetDataRange = sheet.getRange(`B${currentRow}:D${currentRow + balanceSheetItems.length - 1}`);
-        balanceSheetDataRange.numberFormat = [["#,##0;(#,##0);-"]];
+        balanceSheetDataRange.numberFormat = [["#,##0_);(#,##0)"]];  // Use Excel's built-in parentheses format
         balanceSheetDataRange.format.horizontalAlignment = "Right";
 
         // Set colors for labels and headers
@@ -361,20 +361,20 @@ export const FinancialModelGenerator: React.FC = () => {
         // Update cash flow items with Excel formulas
         const cashFlowItems = [
             ["Operating Activities:", "", "", ""],
-            ["    Net Income:", data.financialStatements.cashFlowStatement.netIncome || "",
+            ["    Net Income:", data.financialStatements.cashFlowStatement.netIncome,
              `=C${currentRow - balanceSheetItems.length - incomeStatementItems.length + 10}`,
              `=D${currentRow - balanceSheetItems.length - incomeStatementItems.length + 10}`],
-            ["    Depreciation & Amortization:", data.financialStatements.cashFlowStatement.depreciationAmortization || "",
+            ["    Depreciation & Amortization:", data.financialStatements.cashFlowStatement.depreciationAmortization,
              `=B${currentRow + 2}*(1+C7)`,
              `=C${currentRow + 2}*(1+D7)`],
-            ["Operating Cash Flow:", data.financialStatements.cashFlowStatement.operatingCashFlow || "",
+            ["Operating Cash Flow:", data.financialStatements.cashFlowStatement.operatingCashFlow,
              `=C${currentRow + 2}+C${currentRow + 3}`,
              `=D${currentRow + 2}+D${currentRow + 3}`],
             ["Investing Activities:", "", "", ""],
-            ["    Capital Expenditures:", data.financialStatements.cashFlowStatement.capitalExpenditures ? `(${data.financialStatements.cashFlowStatement.capitalExpenditures})` : "",
+            ["    Capital Expenditures:", data.financialStatements.cashFlowStatement.capitalExpenditures,
              `=-C${currentRow - balanceSheetItems.length - incomeStatementItems.length + 1}*C13`,
              `=-D${currentRow - balanceSheetItems.length - incomeStatementItems.length + 1}*D13`],
-            ["Free Cash Flow:", data.financialStatements.cashFlowStatement.freeCashFlow || "",
+            ["Free Cash Flow:", data.financialStatements.cashFlowStatement.freeCashFlow,
              `=C${currentRow + 4}+C${currentRow + 6}`,
              `=D${currentRow + 4}+D${currentRow + 6}`]
         ];
@@ -384,7 +384,7 @@ export const FinancialModelGenerator: React.FC = () => {
 
         // Format numbers and colors
         const cashFlowDataRange = sheet.getRange(`B${currentRow}:D${currentRow + cashFlowItems.length - 1}`);
-        cashFlowDataRange.numberFormat = [["#,##0;(#,##0);-"]];
+        cashFlowDataRange.numberFormat = [["#,##0_);(#,##0)"]];  // Use Excel's built-in parentheses format
         cashFlowDataRange.format.horizontalAlignment = "Right";
 
         // Set colors for labels and headers
