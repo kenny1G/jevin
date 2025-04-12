@@ -1,0 +1,228 @@
+{
+  "filingInfo": {
+    "filingType": "10-K",
+    "filingDate": "2024-04-12",
+    "reportingPeriodEnd": "2024-09-28",
+    "fiscalYear": 2024,
+    "fiscalQuarter": null,
+    "cik": "320193",
+    "documentUrl": "https://www.sec.gov/Archives/edgar/data/320193/000032019324000123/aapl-20240928.htm"
+  },
+  "companyProfile": {
+    "name": "Apple Inc.",
+    "ticker": "AAPL",
+    "isAdr": null,
+    "reportingCurrency": "",
+    "location": "Cupertino, California 95014",
+    "incorporationLocation": "California",
+    "businessDescription": null,
+    "sector": null,
+    "industry": null,
+    "sicCode": null,
+    "employeeCount": 164000,
+    "exchanges": [
+      "The Nasdaq Stock Market LLC"
+    ],
+    "auditor": "Ernst & Young LLP"
+  },
+  "financialHighlights": {
+    "periodEnd": "2024-09-28",
+    "comparisonPeriodEnd": null,
+    "currency": null,
+    "unit": null,
+    "revenue": 391035,
+    "revenuePriorPeriod": null,
+    "revenueGrowth": null,
+    "grossProfit": null,
+    "grossMargin": null,
+    "operatingIncome": null,
+    "operatingMargin": null,
+    "netIncome": 93736,
+    "netMargin": null,
+    "eps": null,
+    "dilutedEps": null,
+    "ebitda": null,
+    "freeCashFlow": null
+  },
+  "financialStatements": {
+    "incomeStatement": {
+      "periodType": "year",
+      "revenue": 391035,
+      "costOfRevenue": 210352,
+      "grossProfit": 180683,
+      "operatingExpenses": 57467,
+      "rAndD": 31370,
+      "sgAndA": 26097,
+      "operatingIncome": 123216,
+      "interestExpense": 0,
+      "incomeTaxExpense": 0,
+      "netIncome": 93736,
+      "basicEps": 6.11,
+      "dilutedEps": 6.08,
+      "sharesOutstandingBasic": 15343783,
+      "sharesOutstandingDiluted": 15408095
+    },
+    "balanceSheet": {
+      "asOfDate": "2024-09-28",
+      "cashAndEquivalents": 29943,
+      "shortTermInvestments": 0,
+      "accountsReceivable": 33410,
+      "inventory": 7286,
+      "totalCurrentAssets": 152987,
+      "propertyPlantEquipment": 45680,
+      "goodwill": 0,
+      "intangibleAssets": 0,
+      "totalAssets": 364980,
+      "accountsPayable": 68960,
+      "shortTermDebt": 0,
+      "totalCurrentLiabilities": 176392,
+      "longTermDebt": 85750,
+      "totalLiabilities": 308030,
+      "totalEquity": 56950
+    },
+    "cashFlowStatement": {
+      "periodType": "year",
+      "netIncome": 93736,
+      "depreciationAmortization": 11445,
+      "stockBasedCompensation": 11688,
+      "operatingCashFlow": 118254,
+      "capitalExpenditures": 9447,
+      "acquisitions": 0,
+      "investingCashFlow": 0,
+      "debtIssuance": 0,
+      "debtRepayment": 0,
+      "stockRepurchase": 0,
+      "dividendsPaid": 0,
+      "financingCashFlow": 0,
+      "freeCashFlow": 108807
+    }
+  },
+  "businessSegments": [
+    {
+      "name": "Americas",
+      "description": null,
+      "revenue": 167045,
+      "revenuePercentage": null,
+      "operatingIncome": 67656,
+      "operatingMargin": null,
+      "yearOverYearGrowth": null,
+      "outlook": null
+    },
+    {
+      "name": "Europe",
+      "description": null,
+      "revenue": 101328,
+      "revenuePercentage": null,
+      "operatingIncome": 41790,
+      "operatingMargin": null,
+      "yearOverYearGrowth": null,
+      "outlook": null
+    },
+    {
+      "name": "Greater China",
+      "description": null,
+      "revenue": 66952,
+      "revenuePercentage": null,
+      "operatingIncome": 27082,
+      "operatingMargin": null,
+      "yearOverYearGrowth": null,
+      "outlook": null
+    },
+    {
+      "name": "Japan",
+      "description": null,
+      "revenue": 25052,
+      "revenuePercentage": null,
+      "operatingIncome": 12454,
+      "operatingMargin": null,
+      "yearOverYearGrowth": null,
+      "outlook": null
+    },
+    {
+      "name": "Rest of Asia Pacific",
+      "description": null,
+      "revenue": 30658,
+      "revenuePercentage": null,
+      "operatingIncome": 13062,
+      "operatingMargin": null,
+      "yearOverYearGrowth": null,
+      "outlook": null
+    }
+  ],
+  "geographicSegments": [
+    {
+      "region": "Americas",
+      "revenue": 167045,
+      "revenuePercentage": null,
+      "yearOverYearGrowth": null
+    },
+    {
+      "region": "Europe",
+      "revenue": 101328,
+      "revenuePercentage": null,
+      "yearOverYearGrowth": null
+    },
+    {
+      "region": "Greater China",
+      "revenue": 66952,
+      "revenuePercentage": null,
+      "yearOverYearGrowth": null
+    },
+    {
+      "region": "Japan",
+      "revenue": 25052,
+      "revenuePercentage": null,
+      "yearOverYearGrowth": null
+    },
+    {
+      "region": "Rest of Asia Pacific",
+      "revenue": 30658,
+      "revenuePercentage": null,
+      "yearOverYearGrowth": null
+    },
+    {
+      "region": "U.S.",
+      "revenue": 142196,
+      "revenuePercentage": null,
+      "yearOverYearGrowth": null
+    },
+    {
+      "region": "China",
+      "revenue": 66952,
+      "revenuePercentage": null,
+      "yearOverYearGrowth": null
+    },
+    {
+      "region": "Other countries",
+      "revenue": 181887,
+      "revenuePercentage": null,
+      "yearOverYearGrowth": null
+    }
+  ],
+  "keyRisks": [
+    {
+      "category": "Operational",
+      "title": null,
+      "description": "The Company’s future performance depends in part on support from third-party software developers. The Company believes decisions by customers to purchase its hardware products depend in part on the availability of third-party software applications and services. There can be no assurance third-party developers will continue to develop and maintain software applications and services for the Company’s products. If third-party software applications and services cease to be developed and maintained for the Company’s products, customers may choose not to buy the Company’s products.",
+      "potentialImpact": "If third-party software applications and services cease to be developed and maintained for the Company’s products, customers may choose not to buy the Company’s products."
+    },
+    {
+      "category": "Operational",
+      "title": null,
+      "description": "The Company relies on the continued availability and development of compelling and innovative software applications for its products. The Company’s products and operating systems are subject to rapid technological change, and when third-party developers are unable to or choose not to keep up with this pace of change, their applications can fail to take advantage of these changes to deliver improved customer experiences, can operate incorrectly, and can result in dissatisfied customers and lower customer demand for the Company’s products.",
+      "potentialImpact": "Dissatisfied customers and lower customer demand for the Company’s products."
+    },
+    {
+      "category": "Legal",
+      "title": null,
+      "description": "The Company is subject to various claims, legal proceedings and government investigations that have arisen in the ordinary course of business and have not yet been fully resolved, and new matters may arise in the future.",
+      "potentialImpact": "The outcome of litigation or government investigations is inherently uncertain. If one or more legal matters were resolved against the Company or an indemnified third party in a reporting period for amounts above management’s expectations, the Company’s results of operations and financial condition for that reporting period could be materially adversely affected."
+    }
+  ],
+  "managementHighlights": {
+    "businessOverview": "The Company announces new product, service and software offerings at various times during the year.",
+    "keyTrends": "Macroeconomic conditions, including inflation, interest rates and currency fluctuations, have directly and indirectly impacted, and could in the future materially impact, the Company’s results of operations and financial condition.",
+    "liquidityAssessment": "The Company believes its balances of unrestricted cash, cash equivalents and marketable securities, which totaled $140.8 billion as of September 28, 2024, along with cash generated by ongoing operations and continued access to debt markets, will be sufficient to satisfy its cash requirements and capital return program over the next 12 months and beyond.",
+    "outlookSummary": "The Company intends to increase its dividend on an annual basis, subject to declaration by the Board."
+  }
+}
