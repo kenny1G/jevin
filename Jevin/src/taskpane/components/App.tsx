@@ -7,6 +7,7 @@ import FilingUploader from "./FilingUploader";
 import { makeStyles } from "@fluentui/react-components";
 import { Ribbon24Regular, LockOpen24Regular, DesignIdeas24Regular } from "@fluentui/react-icons";
 import { insertText } from "../taskpane";
+import CombinedFilingModelGenerator from "./CombinedFilingModelGenerator";
 
 interface AppProps {
   title: string;
@@ -40,9 +41,13 @@ const App: React.FC<AppProps> = (props: AppProps) => {
   return (
     <div className={styles.root}>
       <Header logo="assets/logo-filled.png" title={props.title} message="Welcome" />
-      <HeroList message="Upload your financial data JSON file to create a 3-statement model!" items={listItems} />
-      <FinancialModelGenerator />
-      <FilingUploader />
+      <HeroList
+        message="Upload your financial data JSON file to create a 3-statement model!"
+        items={listItems}
+      />
+      {/* <FinancialModelGenerator />
+      <FilingUploader /> */}
+      <CombinedFilingModelGenerator />
     </div>
   );
 };
