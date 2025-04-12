@@ -160,4 +160,108 @@ http.route({
   }),
 });
 
+// Route for fetching extraction results from LlamaIndex
+http.route({
+  path: "/fetch-extraction-result",
+  method: "GET",
+  handler: httpAction(async (_, request) => {
+    console.log("🚀 HTTP action started: /fetch-extraction-result");
+
+    try {
+      // Get the job ID from the URL parameters
+      const url = new URL(request.url);
+      const jobId = url.searchParams.get("jobId");
+
+      if (!jobId) {
+        console.log("❌ No job ID provided in the request");
+        return new Response(JSON.stringify({ error: "No job ID provided" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      console.log("✅ Job ID received:", jobId);
+
+      // Get the API key from environment variables
+      console.log("🔑 Checking for API key...");
+      const apiKey = process.env.LLAMA_CLOUD_API_KEY;
+      if (!apiKey) {
+        console.log("❌ API key not configured");
+        return new Response(JSON.stringify({ error: "API key not configured" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      console.log("✅ API key found (length: " + apiKey.length + ")");
+
+      // Fetch the extraction result from LlamaIndex API
+      console.log("🌐 Fetching extraction result from LlamaIndex...");
+      const extractionResponse = await fetch(
+        `https://api.cloud.llamaindex.ai/api/v1/extraction/runs/by-job/${jobId}`,
+        {
+          method: "GET",
+          headers: {
+            "accept": "application/json",
+            "Authorization": `Bearer ${apiKey}`,
+          },
+        }
+      );
+
+      if (!extractionResponse.ok) {
+        const errorText = await extractionResponse.text();
+        console.error("❌ Extraction result fetch failed:", errorText);
+        throw new Error(`Extraction result fetch failed: ${extractionResponse.status} ${extractionResponse.statusText}`);
+      }
+
+      const extractionResult = await extractionResponse.json();
+      console.log("✅ Extraction result fetched successfully");
+
+      // Return the response with CORS headers
+      console.log("📤 Sending response back to client...");
+      return new Response(JSON.stringify({
+        success: true,
+        extractionResult,
+      }), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*", // Adjust this for production
+          "Access-Control-Allow-Methods": "GET, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        },
+      });
+    } catch (error) {
+      console.error("❌ Error fetching extraction result:", error);
+      console.error("❌ Error stack:", error instanceof Error ? error.stack : "No stack trace");
+      return new Response(JSON.stringify({
+        error: "Failed to fetch extraction result",
+        message: error instanceof Error ? error.message : "Unknown error"
+      }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
+    } finally {
+      console.log("🏁 HTTP action completed: /fetch-extraction-result");
+    }
+  }),
+});
+
+// Handle preflight requests for CORS for the new endpoint
+http.route({
+  path: "/fetch-extraction-result",
+  method: "OPTIONS",
+  handler: httpAction(async () => {
+    console.log("🔄 Handling OPTIONS preflight request for fetch-extraction-result");
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": "*", // Adjust this for production
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        "Access-Control-Max-Age": "86400", // 24 hours
+      },
+    });
+  }),
+});
+
 export default http;
