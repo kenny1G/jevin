@@ -1,6 +1,8 @@
 import * as React from "react";
 import { makeStyles, Label, Button, Spinner } from "@fluentui/react-components";
-import { useConvex } from "convex/react";
+import { useConvex, useQuery } from "convex/react";
+import { useQueries } from "convex/react";
+import { api } from "../../../convex/_generated/api";
 
 const useStyles = makeStyles({
   root: {
@@ -26,6 +28,10 @@ const FilingUploader: React.FC = () => {
   const [file, setFile] = React.useState<File | null>(null);
   const [uploading, setUploading] = React.useState(false);
   const [status, setStatus] = React.useState<string | null>(null);
+
+  const convexDocument = useQuery(api.models.document.findDocumentByName, {
+    name: file?.name,
+  });
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -68,7 +74,9 @@ const FilingUploader: React.FC = () => {
       }
     } catch (error) {
       console.error("Upload error:", error);
-      setStatus(`Upload failed in catch: ${error instanceof Error ? error.message : "Unknown error"}`);
+      setStatus(
+        `Upload failed in catch: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
     } finally {
       setUploading(false);
     }
@@ -88,9 +96,16 @@ const FilingUploader: React.FC = () => {
       <Button
         className={styles.button}
         onClick={handleUpload}
-        disabled={!file || uploading}
+        disabled={!file || uploading || convexDocument !== null}
       >
-        {uploading ? <Spinner size="tiny" /> : "Upload to LlamaIndex"}
+        {convexDocument ? (
+          <Label>File already uploaded</Label>
+        ) : uploading ? (
+          <Spinner size="tiny" />
+        ) : (
+          "Upload to LlamaIndex"
+        )}
+        {/* {uploading ? <Spinner size="tiny" /> : "Upload to LlamaIndex"} */}
       </Button>
       {status && <div className={styles.status}>{status}</div>}
     </div>

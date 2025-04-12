@@ -35,15 +35,12 @@ export default defineSchema({
 
     // Optional error message if status is "error"
     errorMessage: v.optional(v.string()),
-  }),
+  }).index("by_name", ["name"]),
 
   // Table for storing extracted JSON from documents
   documentExtracts: defineTable({
     // Reference to the document
     documentId: v.id("documents"),
-
-
-
 
     extractionJobId: v.string(),
   }),

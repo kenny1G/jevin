@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation } from "../_generated/server";
+import { mutation, query } from "../_generated/server";
 import { Id } from "../_generated/dataModel";
 
 // Interface for LlamaIndex file response
@@ -84,7 +84,7 @@ export const updateDocumentStatus = mutation({
 });
 
 // Get a document by ID
-export const getDocumentById = mutation({
+export const getDocumentById = query({
   args: {
     documentId: v.id("documents"),
   },
@@ -93,5 +93,27 @@ export const getDocumentById = mutation({
 
     const document = await ctx.db.get(documentId);
     return document;
+  },
+});
+
+// Find a document by name
+export const findDocumentByName = query({
+  args: {
+    name: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const { name } = args;
+    if (!name) {
+      return null;
+    }
+
+    // Find documents with the given name
+    const documents = await ctx.db
+      .query("documents")
+      .filter((q) => q.eq(q.field("name"), name))
+      .collect();
+
+    // Return the first match or null if none found
+    return documents.length > 0 ? documents[0] : null;
   },
 });
